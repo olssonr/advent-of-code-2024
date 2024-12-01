@@ -35,6 +35,16 @@ func toi(text string) (number int) {
 	return
 }
 
+func count(list []int, element int) (count int) {
+	for _, listItem := range list {
+		if listItem == element {
+			count++
+		}
+	}
+
+	return
+}
+
 func main() {
 	lines := puzzleLines("day1_puzzle_input.txt")
 
@@ -43,7 +53,14 @@ func main() {
 	slices.Sort(list2)
 
 	totalDistance := sumPairDifference(list1, list2)
-	fmt.Println(totalDistance)
+	fmt.Println("Part 1:", totalDistance)
+
+	similarityScore := 0
+	for _, number := range list1 {
+		similarityScore += number * count(list2, number)
+	}
+
+	fmt.Println("Part 2:", similarityScore)
 }
 
 func sumPairDifference(list1 []int, list2 []int) (distanceSum int) {
