@@ -3,6 +3,7 @@ package main
 import (
 	"advent-of-code-2024/utils"
 	"fmt"
+	"slices"
 	"strings"
 )
 
@@ -14,14 +15,37 @@ func main() {
 		reports = append(reports, newReport(line))
 	}
 
-	numSafeReports := 0
+	var failedReports []Report
 	for _, report := range reports {
-		if isSafe(report) {
-			numSafeReports++
+		if !isSafe(report) {
+			failedReports = append(failedReports, report)
 		}
 	}
 
-	fmt.Println(numSafeReports)
+	numSafeReports := len(reports) - len(failedReports)
+	fmt.Println("Part 1: ", numSafeReports)
+
+	numTolerableReports := 0
+	for _, failedReport := range failedReports {
+		if tolerable(failedReport) {
+			numTolerableReports++
+		}
+	}
+
+	fmt.Println("Part 2: ", numSafeReports+numTolerableReports)
+}
+
+func tolerable(report Report) bool {
+	for i := 0; i < len(report.levels); i++ {
+		reportVariation := copyReport(report)
+		reportVariation.levels = slices.Delete(reportVariation.levels, i, i+1)
+
+		if isSafe(reportVariation) {
+			return true
+		}
+	}
+
+	return false
 }
 
 type Report struct {
@@ -33,6 +57,14 @@ func newReport(line string) (report Report) {
 	for _, field := range fields {
 		report.levels = append(report.levels, utils.Toi(field))
 	}
+
+	return
+}
+
+func copyReport(report Report) (reportCopy Report) {
+	levelsCopy := make([]int, len(report.levels))
+	copy(levelsCopy, report.levels)
+	reportCopy = Report{levels: levelsCopy}
 
 	return
 }
