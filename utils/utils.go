@@ -7,12 +7,17 @@ import (
 	"strings"
 )
 
-func PuzzleLines(filename string) (lines []string) {
+func PuzzleText(filename string) string {
 	content, error := os.ReadFile(filename)
 	if error != nil {
 		fmt.Println("Error reading the file:", error)
 	}
-	lines = strings.Split(string(content), "\n")
+
+	return string(content)
+}
+
+func PuzzleLines(filename string) (lines []string) {
+	lines = strings.Split(PuzzleText(filename), "\n")
 
 	return
 }
