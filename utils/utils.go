@@ -45,3 +45,13 @@ func Count(list []int, element int) (count int) {
 
 	return
 }
+
+func Any[T any](slice []T, predicate func(T) bool) bool {
+	for _, element := range slice {
+		if predicate(element) {
+			return true
+		}
+	}
+
+	return false
+}
