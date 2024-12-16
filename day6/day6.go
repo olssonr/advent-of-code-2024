@@ -12,11 +12,43 @@ func main() {
 	guard := newGuard(up, labMap.grid.findGuardPosition())
 
 	//labMap.grid.print()
-	for guard.patrol(labMap) {
+	isInGrid := true
+	isInLoop := false
+	for isInGrid && !isInLoop {
 		//labMap.grid.print()
+		isInGrid, isInLoop = guard.patrol(labMap)
 	}
 
 	fmt.Println("Part 1:", labMap.grid.numDistinctPositions())
+
+	// Part2
+	// First, draw the map with all visited positions marked (already done in part1)
+	// Then try adding an obstacle to each visited position
+	// Restart the patrol loop now and check for two things:
+	// 1. If patrol returns false, the guard is about to go out of the grid, and there is no loop
+	// 2. If we visit the same positition twice and we are facing the same direction we are in a loop
+	numDifferentObstructionPositions := 0
+	for _, position := range labMap.grid.visitedPositions() {
+		// We need to work a new copy of the map, would a deep copy be more efficient?
+		mapWithObstacle := newLabMap(lines)
+		mapWithObstacle.grid[position.y][position.x] = "O"
+		guard := newGuard(up, mapWithObstacle.grid.findGuardPosition())
+
+		isInGrid := true
+		isInLoop := false
+		for isInGrid && !isInLoop {
+			//mapWithObstacle.grid.print()
+			isInGrid, isInLoop = guard.patrol(mapWithObstacle)
+		}
+
+		if isInLoop {
+			numDifferentObstructionPositions++
+			//fmt.Println(numDifferentObstructionPositions)
+		}
+	}
+
+	fmt.Println("Part 2:", numDifferentObstructionPositions)
+
 }
 
 const (
@@ -94,21 +126,44 @@ func (guard *Guard) turn() {
 	guard.facing = (guard.facing + 90) % 360
 }
 
-func (guard *Guard) patrol(labMap LabMap) bool {
+func (guard *Guard) patrol(labMap LabMap) (inMap bool, inLoop bool) {
 	positionAhead := guard.positionAhead()
 	if !positionAhead.isValid(labMap) {
-		return false
+		return false, false
 	}
 
-	if labMap.positionHasObstacle(positionAhead) {
+	if labMap.positionHasObstacle(positionAhead) || labMap.positionHasNewObstacle(positionAhead) {
 		guard.turn()
 	} else {
 		guard.position = positionAhead
+
+		oldMark := labMap.grid.getMark(guard.position)
+		labMap.markVisited(*guard)
+		newMark := labMap.grid.getMark(guard.position)
+
+		// Another way to discover the loop would be to store the guard (coordinate, facing) in a set and check that
+		// But this was more fun :D
+		if oldMark == newMark {
+			return true, true
+		}
 	}
 
-	labMap.markVisited(guard.position)
+	return true, false
+}
 
-	return true
+func (guard Guard) mark() (mark string) {
+	switch guard.facing {
+	case up:
+		mark = "^"
+	case down:
+		mark = "v"
+	case left:
+		mark = "<"
+	case right:
+		mark = ">"
+	}
+
+	return
 }
 
 type LabMap struct {
@@ -125,12 +180,16 @@ func newLabMap(lines []string) (labMap LabMap) {
 	return
 }
 
-func (labMap *LabMap) markVisited(cooardinate Coordinate) {
-	labMap.grid[cooardinate.y][cooardinate.x] = "X"
+func (labMap *LabMap) markVisited(guard Guard) {
+	labMap.grid[guard.position.y][guard.position.x] = guard.mark()
 }
 
 func (labMap LabMap) positionHasObstacle(coordinate Coordinate) bool {
 	return labMap.grid[coordinate.y][coordinate.x] == "#"
+}
+
+func (labMap LabMap) positionHasNewObstacle(coordinate Coordinate) bool {
+	return labMap.grid[coordinate.y][coordinate.x] == "O"
 }
 
 type Grid [][]string
@@ -159,13 +218,29 @@ func (grid Grid) findGuardPosition() (coordinate Coordinate) {
 func (grid Grid) numDistinctPositions() (sum int) {
 	for _, line := range grid {
 		for _, character := range line {
-			if character == "X" || character == "^" {
+			if character == "^" || character == "v" || character == "<" || character == ">" {
 				sum++
 			}
 		}
 	}
 
 	return
+}
+
+func (grid Grid) visitedPositions() (positions []Coordinate) {
+	for y, line := range grid {
+		for x, character := range line {
+			if character == "^" || character == "v" || character == "<" || character == ">" {
+				positions = append(positions, newCoordinate(x, y))
+			}
+		}
+	}
+
+	return
+}
+
+func (grid Grid) getMark(coordinate Coordinate) string {
+	return grid[coordinate.y][coordinate.x]
 }
 
 func (grid Grid) print() {

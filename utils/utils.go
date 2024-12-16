@@ -55,3 +55,10 @@ func Any[T any](slice []T, predicate func(T) bool) bool {
 
 	return false
 }
+
+func CopySlice[T any](original []T) (duplicate []T) {
+	duplicate = make([]T, len(original))
+	copy(duplicate, original)
+
+	return
+}
