@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"regexp"
 	"slices"
+	"strconv"
 	"strings"
 )
 
@@ -39,6 +40,17 @@ func main() {
 		}
 	}
 	fmt.Println("Part1:", totalCalibrationResult)
+
+	// Part2: We just need to add another operator
+	totalCalibrationResult = 0
+	for _, equation := range equations {
+		sums := configurations2(equation.numbers[0], equation.numbers[1:])
+		if slices.Contains(sums, equation.testValue) {
+			totalCalibrationResult += equation.testValue
+		}
+	}
+	fmt.Println("Part2:", totalCalibrationResult)
+
 }
 
 func configurations(acc int, numbers []int) []int {
@@ -52,6 +64,24 @@ func configurations(acc int, numbers []int) []int {
 
 	// Recursively calculate the configurations and merge the results in a flat slice
 	return append(configurations(acc+head, tail), configurations(acc*head, tail)...)
+}
+
+func configurations2(acc int, numbers []int) []int {
+	if len(numbers) < 1 {
+		// Base case: return the accumulated result in a slice
+		return []int{acc}
+	}
+
+	head := numbers[0]
+	tail := numbers[1:]
+
+	// Recursively calculate the configurations and merge the results in a flat slice
+	// There is no builtin way to merge three slices in go, so we do this...
+	// An improvement here would be to extract out the calucation part to a function and just iterate over a set of
+	// operators and build a slice from that.
+	merged := append(configurations2(acc+head, tail), configurations2(acc*head, tail)...)
+	merged = append(merged, configurations2(utils.Toi(strconv.Itoa(acc)+strconv.Itoa(head)), tail)...)
+	return merged
 }
 
 type Equation struct {
